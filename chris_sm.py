@@ -12,10 +12,11 @@ import math
 from math import cos, sin, pi
 
 from scipy.optimize import minimize as minimise
-
+from scipy.optimize import fmin
 import numpy as np
 
-#import motplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
 
 
 # Global definitions
@@ -60,7 +61,7 @@ class SpinStack(object):
         for h in field_range:
             arrangements.append(self.converge_h(h))
 
-        for h in reverse(field_range):
+        for h in reversed(field_range):
             arrangements.append(self.converge_h(h))
 
         return arrangements
@@ -84,7 +85,7 @@ class SpinStack(object):
 
         def converged(oldstack, newstack):
             print "Accuracy = %f" % (max(map(abs, map(operator.sub, oldstack, newstack))))
-            if max(map(abs, map(operator.minus, oldstack, newstack))) < accuracy:
+            if max(map(abs, map(operator.sub, oldstack, newstack))) < accuracy:
                 return True
             return False
 
@@ -96,7 +97,7 @@ class SpinStack(object):
 
             for index, phi in enumerate(combined):
                 phi_p = combined[index - 1] if index else phi
-                phi_n = combined[index + 1] if index < len(combined) else phi
+                phi_n = combined[index] if index < len(combined) else phi  #= combined[index + 1] if ... ?
 
                 if is_inner(index): 
                     msi = self._M_INNER
@@ -131,21 +132,22 @@ class SpinStack(object):
                             - j_p * _MU_0 * msi * msi_p * cos(phi_variable - phi_p))
 
                 print "About to solve the minimise function..."
-                result = minimise(get_energy, [phi], method='TNC', bounds=[(0, 2*pi)])
+                #result = minimise(get_energy, [phi], method='TNC', bounds=[(0, 2*pi)])
+		result = fmin(get_energy, [phi], disp=False)
 
-                if not result.success:
-                    print "Minimise function failed!"
-                    print result.message
+#                if not result.success:
+#                    print "Minimise function failed!"
+#                    print result.message
 
-                    ar = []
-                    for temp in range(314 * 2):
-                        ar.append(get_energy(temp * 0.01))
+ #                   ar = []
+ #                   for temp in range(314 * 2):
+ #                       ar.append(get_energy(temp * 0.01))
 
-                    print min(ar)
-                    print ar.index(min(ar))
-                    sys.exit(1)
+ #                   print min(ar)
+ #                   print ar.index(min(ar))
+ #                   sys.exit(1)
 
-                new_phi = result.x[0]
+                new_phi = result[0]
 
                 print "Minimised phi is %f (energy = %f)" % (new_phi, get_energy(new_phi))
                 new_stack.append(new_phi)
@@ -176,7 +178,6 @@ class NiGdNiStack(SpinStack):
     _THETA_OUTER = pi/4.0
         
 
-
 def main():
     # Main calculation
     parser = argparse.ArgumentParser(description=__doc__)
@@ -200,6 +201,21 @@ def main():
     stack = NiGdNiStack(2, 4, 2)
     result = stack.sweep_h(args.upper, args.lower, args.steps)
     print result
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.set_xlabel('Field (Tesla)')
+    ax.set_ylabel('Layer')
+    ax.set_zlabel('Angle (pi rads)')
+    ax.azim = 90 #-79
+    ax.elev = 11 #22
+
+    for i in range(1,len(result)):
+        for j in range(1,9): #range(1,9) unsatisfactory, need combined or sum n_top etc.
+            ax.scatter(field_range[i-1],j,np.cos((result[i][j]))/np.pi, marker = 'x')  #field_range not global variable
+            ax.scatter(field_range[i-1],j,-np.cos((result[i][j]))/np.pi, color = 'red', marker = '+')
+        
+    plt.show()
 
 if __name__ == "__main__":
     main()
