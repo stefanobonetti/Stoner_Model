@@ -93,6 +93,9 @@ class SpinStack(object):
             return False
 
         count = 0
+
+        print "\nH = %f\n" % (h)
+
         while True:
 
             combined  = self.top + self.middle + self.bottom
@@ -100,7 +103,7 @@ class SpinStack(object):
 
             for index, phi in enumerate(combined):
                 phi_p = combined[index - 1] if index else phi
-                phi_n = combined[index] if index < len(combined) else phi  #= combined[index + 1] if ... ?
+                phi_n = combined[index] if index < len(combined) else phi
 
                 if is_inner(index): 
                     msi = self._M_INNER
@@ -136,10 +139,28 @@ class SpinStack(object):
                             - j_p * _MU_0 * msi * msi_p * cos(phi_variable - phi_p))
 
                 print "About to solve the minimise function..."
-                #result = minimise(get_energy, [phi], method='TNC', bounds=[(0, 2*pi)])
-		result = fmin(get_energy, phi_p, disp=False)
+                
+                # Scipy's minimise function.
+                result = minimise(get_energy, [phi], method='SLSQP', bounds=[(0, 2*np.pi)])
+		
+                if not result.success:
+                    print "Minimise function failed!"
+                    print result.message
+                
+                    ar = []
+                    for temp in range(314 * 2):
+                        ar.append(get_energy(temp * 0.01))
+                
+                    print min(ar)
+                    print ar.index(min(ar))
+                    sys.exit(1)
 
-                new_phi = result[0]
+                new_phi = result.x[0]
+
+                # Temporary replacement.
+                #result = fmin(get_energy, phi_p, disp=False)
+                #new_phi = result[0]
+                # .tnemecalper yraropmeT
 
                 print "Minimised phi is %f (energy = %f)" % (new_phi, get_energy(new_phi))
                 new_stack.append(new_phi)
@@ -151,7 +172,7 @@ class SpinStack(object):
             if count and converged(combined, new_stack): break
             count += 1
 
-        print "Converged in %d iteration(s)" % (count)
+        print "Converged to %f in %d iterations" % (accuracy, count)
         return new_stack
                 
 
@@ -196,7 +217,7 @@ def main():
     #
     #  Plotting code from here.
     #
-    #  A few things are changed but the code should be versatile for different set sizes.
+    #  A few things are changed but the code should be versatile for different stack and set sizes.
     #
 
 
@@ -210,9 +231,9 @@ def main():
 
     for i in range(args.steps) :
         for j in range(stack.n_layers) :
-            ax.scatter(field_range[i],j+1,result[i][j], marker = 'x')
+            ax.scatter(field_range[i],j+1,np.cos(result[i][j]), marker = 'x')
             #print field_range[i], "\t", j+1, "\t", result[i][j]
-            ax.scatter(reversed(field_range)[i],j+1,result[args.steps+i][j], color = 'red', marker = '+')
+            ax.scatter(field_range[args.steps-(i+1)],j+1,np.cos(result[args.steps+i][j]), color = 'red', marker = '+')
             #print field_range[args.steps-(i+1)], "\t", j+1, "\t", result[args.steps+i][j]
 
     plt.show()
