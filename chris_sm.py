@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 
 
 # Global definitions
-_MU_0 = 1.256637061e-6
+_MU_0 = 1.256637061e-6   #SI units
 
 
 class SpinStack(object):
@@ -65,7 +65,7 @@ class SpinStack(object):
             arrangements.append(self.converge_h(h))
 
         return arrangements
-
+        return field_range
 
     def converge_h(self, h, accuracy=10e-3):
         """
@@ -122,6 +122,7 @@ class SpinStack(object):
                 if j == j_n and j != j_p:
                     j_p = j_p * -1
 
+                # Reverse the sign of M_s depending on sign of H
                 sign = -1 if h < 0 else 1
 
                 def get_energy(phi_variable):
@@ -133,19 +134,7 @@ class SpinStack(object):
 
                 print "About to solve the minimise function..."
                 #result = minimise(get_energy, [phi], method='TNC', bounds=[(0, 2*pi)])
-		result = fmin(get_energy, [phi], disp=False)
-
-#                if not result.success:
-#                    print "Minimise function failed!"
-#                    print result.message
-
- #                   ar = []
- #                   for temp in range(314 * 2):
- #                       ar.append(get_energy(temp * 0.01))
-
- #                   print min(ar)
- #                   print ar.index(min(ar))
- #                   sys.exit(1)
+		result = fmin(get_energy, phi_p, disp=False)
 
                 new_phi = result[0]
 
@@ -159,7 +148,7 @@ class SpinStack(object):
             if count and converged(combined, new_stack): break
             count += 1
 
-        print "Converged to %f in %d iterations" % (accuracy, count)
+        print "Converged in %d iteration(s)" % (count)
         return new_stack
                 
 
@@ -195,13 +184,14 @@ def main():
         parser.print_help()
         sys.exit(1)
         
-    print "Started with upper=%f, lower=%f, steps=%d" % (
-        args.upper, args.lower, args.steps)
+    #print "Started with upper=%f, lower=%f, steps=%d" % (
+    #    args.upper, args.lower, args.steps)
 
     stack = NiGdNiStack(2, 4, 2)
     result = stack.sweep_h(args.upper, args.lower, args.steps)
-    print result
-
+    print field_range
+    
+'''
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
     ax.set_xlabel('Field (Tesla)')
@@ -212,10 +202,11 @@ def main():
 
     for i in range(1,len(result)):
         for j in range(1,9): #range(1,9) unsatisfactory, need combined or sum n_top etc.
-            ax.scatter(field_range[i-1],j,np.cos((result[i][j]))/np.pi, marker = 'x')  #field_range not global variable
-            ax.scatter(field_range[i-1],j,-np.cos((result[i][j]))/np.pi, color = 'red', marker = '+')
+            print stack.sweep_h(args.upper, args.lower, args.steps)
+            #ax.scatter(stack.sweep_h(args.upper, args.lower, args.steps)[i-1],j,np.cos((result[i][j]))/np.pi, marker = 'x')
+            #ax.scatter(stack.sweep_h(args.upper, args.lower, args.steps)[i-1],j,-np.cos((result[i][j]))/np.pi, color = 'red', marker = '+')
         
     plt.show()
-
+'''
 if __name__ == "__main__":
     main()
