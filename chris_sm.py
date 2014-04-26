@@ -212,7 +212,7 @@ def main():
         for j in range(stack.n_layers) :
             ax.scatter(field_range[i],j+1,result[i][j], marker = 'x')
             #print field_range[i], "\t", j+1, "\t", result[i][j]
-            ax.scatter(field_range[args.steps-(i+1)],j+1,result[args.steps+i][j], color = 'red', marker = '+')
+            ax.scatter(reversed(field_range)[i],j+1,result[args.steps+i][j], color = 'red', marker = '+')
             #print field_range[args.steps-(i+1)], "\t", j+1, "\t", result[args.steps+i][j]
 
     plt.show()
