@@ -46,17 +46,21 @@ class SpinStack(object):
     
     def __init__(self, n_top, n_middle, n_bottom):
 
+        self.n_top = n_top
+        self.n_middle = n_middle
+        self.n_bottom = n_bottom
+
+        self.n_layers = n_top + n_middle + n_bottom
+
         self.top = [pi] * n_top
         self.middle = [0] * n_middle
         self.bottom = [pi] * n_bottom
 
-    def sweep_h(self, start, end, steps):
+    def sweep_h(self, field_range):
 
-        print "Sweeping H from %f to %f with %d steps" % (start, end, steps)
+        print "Sweeping H from %f to %f with %d steps" % (field_range[0], field_range[len(field_range)-1], len(field_range))
 
         arrangements = []
-
-        field_range = np.linspace(start, end, steps)
         
         for h in field_range:
             arrangements.append(self.converge_h(h))
@@ -65,7 +69,6 @@ class SpinStack(object):
             arrangements.append(self.converge_h(h))
 
         return arrangements
-        return field_range
 
     def converge_h(self, h, accuracy=10e-3):
         """
@@ -184,14 +187,19 @@ def main():
         parser.print_help()
         sys.exit(1)
         
-    #print "Started with upper=%f, lower=%f, steps=%d" % (
-    #    args.upper, args.lower, args.steps)
+    field_range = np.linspace(args.lower, args.upper, args.steps)
 
     stack = NiGdNiStack(2, 4, 2)
-    result = stack.sweep_h(args.upper, args.lower, args.steps)
-    print field_range
+    result = stack.sweep_h(field_range)
+
     
-'''
+    #
+    #  Plotting code from here.
+    #
+    #  A few things are changed but the code should be versatile for different set sizes.
+    #
+
+
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
     ax.set_xlabel('Field (Tesla)')
@@ -200,13 +208,14 @@ def main():
     ax.azim = 90 #-79
     ax.elev = 11 #22
 
-    for i in range(1,len(result)):
-        for j in range(1,9): #range(1,9) unsatisfactory, need combined or sum n_top etc.
-            print stack.sweep_h(args.upper, args.lower, args.steps)
-            #ax.scatter(stack.sweep_h(args.upper, args.lower, args.steps)[i-1],j,np.cos((result[i][j]))/np.pi, marker = 'x')
-            #ax.scatter(stack.sweep_h(args.upper, args.lower, args.steps)[i-1],j,-np.cos((result[i][j]))/np.pi, color = 'red', marker = '+')
-        
+    for i in range(args.steps) :
+        for j in range(stack.n_layers) :
+            ax.scatter(field_range[i],j+1,result[i][j], marker = 'x')
+            #print field_range[i], "\t", j+1, "\t", result[i][j]
+            ax.scatter(field_range[args.steps-(i+1)],j+1,result[args.steps+i][j], color = 'red', marker = '+')
+            #print field_range[args.steps-(i+1)], "\t", j+1, "\t", result[args.steps+i][j]
+
     plt.show()
-'''
+
 if __name__ == "__main__":
     main()
